@@ -1,0 +1,13 @@
+@import "./normalize.css";
+* {
+  box-sizing: border-box;
+}
+dl,
+dd,
+p {
+  margin: 0;
+  padding: 0;
+}
+img {
+  vertical-align: top;
+}
