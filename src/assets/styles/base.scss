@@ -79,7 +79,9 @@ body {
   border: 1px dashed #ccc;
 }
 .ui-overlay-placeholder {
-  position: relative;
+  position: absolute;
+  z-index: 3;
+  color: orange;
   background-color: currentColor;
   &::before {
     content: "";
@@ -125,21 +127,56 @@ body {
   }
 }
 .ui-overlay-hovermask {
-  background-color: currentColor;
   position: absolute;
   left: 0;
   top: 0;
   width: 0;
   height: 0;
+  color: #3396fb;
   &-line {
     position: absolute;
-    border-style: dashed;
-    border-color: currentColor;
-    border-width: 0;
+    border-top: 1px dashed currentColor;
   }
   &-leftline,
   &-rightline {
     transform-origin: 0 0;
     transform: rotate(90deg);
+  }
+}
+.ui-overlay-activemask {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  color: #3396fb;
+  &-line {
+    position: absolute;
+    border-top: 2px solid currentColor;
+  }
+  &-leftline,
+  &-rightline {
+    transform-origin: 0 0;
+    transform: rotate(90deg);
+  }
+  &-buttons {
+    position: absolute;
+    width: 80px;
+    height: 30px;
+    padding: 0 5px;
+    font-size: 12px;
+    color: #fff;
+    background-color: #3396fb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    span {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      cursor: pointer;
+    }
   }
 }

@@ -6,19 +6,20 @@
  */
 import { addClass, removeClass } from "./common";
 
+/**
+ * 占位遮罩层
+ *
+ */
 let placeholder = {
   elem: null,
   width: 2,
   createElement(
-    { className = "ui-overlay-placeholder", color = "#3396fb" } = {
-      className: "ui-overlay-placeholder",
-      color: "#3396fb"
+    { className = "ui-overlay-placeholder" } = {
+      className: "ui-overlay-placeholder"
     }
   ) {
     this.elem = document.createElement("div");
     this.elem.className = className;
-    this.elem.style.color = color;
-    this.elem.style.position = "absolute";
     this.elem.style.display = "none";
     document.body.appendChild(this.elem);
   },
@@ -43,26 +44,23 @@ let placeholder = {
   }
 };
 
+/**
+ * 鼠标经过遮罩层
+ *
+ */
 let hovermask = {
   elem: null,
   topLineEl: null,
   bottomLineEl: null,
   leftLineEl: null,
   rightLineEl: null,
-  width: 2,
   createElement(
-    { className = "ui-overlay-hovermask", color = "#3396fb" } = {
-      className: "ui-overlay-hovermask",
-      color: "#3396fb"
+    { className = "ui-overlay-hovermask" } = {
+      className: "ui-overlay-hovermask"
     }
   ) {
     this.elem = document.createElement("div");
     this.elem.className = className;
-    this.elem.style.color = color;
-    this.elem.style.opacity = "0.5";
-    this.elem.style.position = "absolute";
-    this.elem.style.width = "0";
-    this.elem.style.height = "0";
     this.elem.style.display = "none";
     this.topLineEl = document.createElement("div");
     this.bottomLineEl = document.createElement("div");
@@ -83,33 +81,89 @@ let hovermask = {
     let leftPx = combinePx(left);
     let widthPx = combinePx(width);
     let heightPx = combinePx(height);
-    let borderWidthPx = combinePx(this.width);
     this.topLineEl.style.width = widthPx;
-    this.topLineEl.style.borderTopWidth = borderWidthPx;
     this.topLineEl.style.top = topPx;
     this.topLineEl.style.left = leftPx;
     this.bottomLineEl.style.width = widthPx;
-    this.bottomLineEl.style.borderTopWidth = borderWidthPx;
     this.bottomLineEl.style.top = combinePx(top + height);
     this.bottomLineEl.style.left = leftPx;
     this.leftLineEl.style.width = heightPx;
-    this.leftLineEl.style.borderTopWidth = borderWidthPx;
     this.leftLineEl.style.top = topPx;
-    this.leftLineEl.style.left = combinePx(left + this.width);
+    this.leftLineEl.style.left = combinePx(left + 1);
     this.rightLineEl.style.width = heightPx;
-    this.rightLineEl.style.borderTopWidth = borderWidthPx;
     this.rightLineEl.style.top = topPx;
     this.rightLineEl.style.left = combinePx(left + width);
     this.elem.style.display = "block";
   },
   hide() {
     this.elem.style.display = "none";
+  }
+};
+
+/**
+ * 激活遮罩层
+ *
+ */
+let activemask = {
+  elem: null,
+  topLineEl: null,
+  bottomLineEl: null,
+  leftLineEl: null,
+  rightLineEl: null,
+  buttonGroupEl: null,
+  createElement(
+    { className = "ui-overlay-activemask" } = {
+      className: "ui-overlay-activemask"
+    }
+  ) {
+    this.elem = document.createElement("div");
+    this.elem.className = className;
+    this.elem.style.display = "none";
+    this.topLineEl = document.createElement("div");
+    this.bottomLineEl = document.createElement("div");
+    this.leftLineEl = document.createElement("div");
+    this.rightLineEl = document.createElement("div");
+    this.buttonGroupEl = document.createElement("div");
+    this.topLineEl.className = `${className}-line ${className}-topline`;
+    this.bottomLineEl.className = `${className}-line ${className}-bottomline`;
+    this.leftLineEl.className = `${className}-line ${className}-leftline`;
+    this.rightLineEl.className = `${className}-line ${className}-rightline`;
+    this.buttonGroupEl.className = `${className}-buttons`;
+    this.buttonGroupEl.innerHTML = "<span>复制</span> | <span>删除</span>";
+    this.elem.appendChild(this.topLineEl);
+    this.elem.appendChild(this.bottomLineEl);
+    this.elem.appendChild(this.leftLineEl);
+    this.elem.appendChild(this.rightLineEl);
+    this.elem.appendChild(this.buttonGroupEl);
+    document.body.appendChild(this.elem);
   },
-  bindEvent() {},
-  mouseleaveEvent() {
-    this.elem.addEventListener("mouseleave", event => {
-      this.hide();
-    });
+  show({ top, left, width, height }) {
+    let topPx = combinePx(top);
+    let leftPx = combinePx(left);
+    let widthPx = combinePx(width);
+    let heightPx = combinePx(height);
+    this.topLineEl.style.width = widthPx;
+    this.topLineEl.style.top = topPx;
+    this.topLineEl.style.left = leftPx;
+    this.bottomLineEl.style.width = widthPx;
+    this.bottomLineEl.style.top = combinePx(top + height);
+    this.bottomLineEl.style.left = leftPx;
+    this.leftLineEl.style.width = heightPx;
+    this.leftLineEl.style.top = topPx;
+    this.leftLineEl.style.left = combinePx(left + 2);
+    this.rightLineEl.style.width = heightPx;
+    this.rightLineEl.style.top = topPx;
+    this.rightLineEl.style.left = combinePx(left + width);
+    this.buttonGroupEl.style.left = combinePx(left + width - 80);
+    if (top > 30) {
+      this.buttonGroupEl.style.top = combinePx(top - 30);
+    } else {
+      this.buttonGroupEl.style.top = combinePx(top + height);
+    }
+    this.elem.style.display = "block";
+  },
+  hide() {
+    this.elem.style.display = "none";
   }
 };
 
@@ -125,9 +179,11 @@ function combinePx(number) {
 function init() {
   placeholder.createElement();
   hovermask.createElement();
+  activemask.createElement();
   return {
     placeholder,
-    hovermask
+    hovermask,
+    activemask
   };
 }
 
