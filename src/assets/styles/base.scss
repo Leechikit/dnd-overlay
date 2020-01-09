@@ -46,9 +46,11 @@ body {
   text-align: center;
   cursor: pointer;
 }
+.g-main {
+  position: relative;
+}
 .dropArea {
   position: relative;
-  height: 100%;
   .ui-drag {
     min-height: 60px;
     line-height: 60px;
@@ -76,7 +78,7 @@ body {
   padding: 10px;
   border: 1px dashed #ccc;
 }
-.ui-overlay {
+.ui-overlay-placeholder {
   position: relative;
   background-color: currentColor;
   &::before {
@@ -120,5 +122,24 @@ body {
       width: 7px;
       height: 2px;
     }
+  }
+}
+.ui-overlay-hovermask {
+  background-color: currentColor;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  &-line {
+    position: absolute;
+    border-style: dashed;
+    border-color: currentColor;
+    border-width: 0;
+  }
+  &-leftline,
+  &-rightline {
+    transform-origin: 0 0;
+    transform: rotate(90deg);
   }
 }

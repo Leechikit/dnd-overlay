@@ -1,8 +1,8 @@
 import "./index.html";
 import "@/assets/styles/base.scss";
-
-const dragEls = document.querySelectorAll(".ui-drag");
-const dropAreaEls = document.querySelectorAll(".dropArea");
+import Throttle from "./dnd/throttle";
+import Overlay from "./dnd/overlay";
+import { addClass, removeClass } from "./dnd/common";
 
 /**
  * Overlay
@@ -10,72 +10,72 @@ const dropAreaEls = document.querySelectorAll(".dropArea");
  * @param: {String} param description
  * @return: {String} return
  */
-class Overlay {
-  constructor(
-    { className = "ui-overlay", color = "#3396fb" } = {
-      className: "ui-overlay",
-      color: "#3396fb"
-    }
-  ) {
-    this.className = className;
-    this.color = color;
-    this.width = "2px";
-    this.elem = this.createElement();
-    document.body.appendChild(this.elem);
-  }
-  createElement() {
-    this.elem = document.createElement("div");
-    this.elem.className = this.className;
-    this.elem.style.color = this.color;
-    this.elem.style.position = "absolute";
-    this.elem.style.display = "none";
-    return this.elem;
-  }
-  getElement() {
-    return this.elem;
-  }
-  show({ top, left, length, mode = "horizontal" }) {
-    overlayEl.style.top = top;
-    overlayEl.style.left = left;
-    if (mode === "vertical") {
-      overlayEl.style.width = this.width;
-      overlayEl.style.height = length;
-      removeClass(this.elem, "s-horizontal");
-      addClass(this.elem, "s-vertical");
-    } else {
-      overlayEl.style.width = length;
-      overlayEl.style.height = this.width;
-      removeClass(this.elem, "s-vertical");
-      addClass(this.elem, "s-horizontal");
-    }
-    this.elem.style.display = "block";
-  }
-  hide() {
-    this.elem.style.display = "none";
-  }
-}
+// class Overlay {
+//   constructor(
+//     { className = "ui-overlay", color = "#3396fb" } = {
+//       className: "ui-overlay",
+//       color: "#3396fb"
+//     }
+//   ) {
+//     this.className = className;
+//     this.color = color;
+//     this.width = "2px";
+//     this.elem = this.createElement();
+//     document.body.appendChild(this.elem);
+//   }
+//   createElement() {
+//     this.elem = document.createElement("div");
+//     this.elem.className = this.className;
+//     this.elem.style.color = this.color;
+//     this.elem.style.position = "absolute";
+//     this.elem.style.display = "none";
+//     return this.elem;
+//   }
+//   getElement() {
+//     return this.elem;
+//   }
+//   show({ top, left, length, mode = "horizontal" }) {
+//     overlayEl.style.top = top;
+//     overlayEl.style.left = left;
+//     if (mode === "vertical") {
+//       overlayEl.style.width = this.width;
+//       overlayEl.style.height = length;
+//       removeClass(this.elem, "s-horizontal");
+//       addClass(this.elem, "s-vertical");
+//     } else {
+//       overlayEl.style.width = length;
+//       overlayEl.style.height = this.width;
+//       removeClass(this.elem, "s-vertical");
+//       addClass(this.elem, "s-horizontal");
+//     }
+//     this.elem.style.display = "block";
+//   }
+//   hide() {
+//     this.elem.style.display = "none";
+//   }
+// }
 let throttle = new Throttle();
-let overlay = new Overlay();
-let overlayEl = overlay.getElement();
-overlayEl.addEventListener("dragenter", function(event) {
-  console.log("overlay enter");
-  throttle(() => {
-    overlayEl.style.display = "block";
-  }, true);
-});
-overlayEl.addEventListener("dragover", function(event) {
-  event.preventDefault();
-  console.log("overlay over");
-  throttle(() => {
-    overlayEl.style.display = "block";
-  }, true);
-});
-overlayEl.addEventListener("dragleave", function(event) {
-  console.log("overlay leave");
-  throttle(() => {
-    overlayEl.style.display = "block";
-  }, true);
-});
+// let overlay = Overlay.init();
+// let overlayEl = overlay.placeholder.elem
+// overlayEl.addEventListener("dragenter", function(event) {
+//   console.log("overlay enter");
+//   throttle(() => {
+//     overlayEl.style.display = "block";
+//   }, true);
+// });
+// overlayEl.addEventListener("dragover", function(event) {
+//   event.preventDefault();
+//   console.log("overlay over");
+//   throttle(() => {
+//     overlayEl.style.display = "block";
+//   }, true);
+// });
+// overlayEl.addEventListener("dragleave", function(event) {
+//   console.log("overlay leave");
+//   throttle(() => {
+//     overlayEl.style.display = "block";
+//   }, true);
+// });
 
 class Dnd {
   constructor({
@@ -89,20 +89,85 @@ class Dnd {
     this.direction = null;
     this.currDragElem = null;
     this.currDropElem = null;
+    this.throttle = new Throttle();
+    this.overlayPlaceholder = null;
+    this.overlayHovermask = null;
     this.init();
   }
   init() {
+    this.createOverlay();
+    this.mouseenterEvent();
+    this.mouseleaveEvent();
+    this.clickEvent();
     this.dragstartEvent();
     this.dragendEvent();
     this.dragoverEvent();
     this.dragleaveEvent();
     this.dropEvent();
   }
-  bindEvent(selector, event, callback) {
+  createOverlay() {
+    let overlay = Overlay.init();
+    this.overlayPlaceholder = overlay.placeholder;
+    this.overlayHovermask = overlay.hovermask;
+    let overlayEl = this.overlayPlaceholder.elem;
+    overlayEl.addEventListener("dragenter", function(event) {
+      console.log("overlay enter");
+      throttle(() => {
+        overlayEl.style.display = "block";
+      }, true);
+    });
+    overlayEl.addEventListener("dragover", function(event) {
+      event.preventDefault();
+      console.log("overlay over");
+      throttle(() => {
+        overlayEl.style.display = "block";
+      }, true);
+    });
+    overlayEl.addEventListener("dragleave", function(event) {
+      console.log("overlay leave");
+      throttle(() => {
+        overlayEl.style.display = "block";
+      }, true);
+    });
+  }
+  bindEvent(selector, event, callback, useCapture = false) {
     Array.from(document.querySelectorAll(selector)).forEach(elem => {
-      elem.addEventListener(event, function(event) {
-        typeof callback === "function" && callback.call(this, event);
-      });
+      elem.addEventListener(
+        event,
+        function(event) {
+          typeof callback === "function" && callback.call(this, event);
+        },
+        useCapture
+      );
+    });
+  }
+  mouseenterEvent() {
+    this.bindEvent(
+      `${this.dropSelector} ${this.dragSelector}`,
+      "mouseenter",
+      event => {
+        let currentTarget = event.currentTarget;
+        let currElemDetail = getElementDetail(currentTarget);
+        let currElemOffset = getElementPageOffset(currentTarget);
+        addClass(currentTarget, "s-mouseenter");
+        this.overlayHovermask.show({
+          left: currElemOffset.offsetLeft,
+          top: currElemOffset.offsetTop,
+          width: currElemDetail.width,
+          height: currElemDetail.height
+        });
+      }
+    );
+  }
+  mouseleaveEvent() {
+    this.bindEvent(this.dragSelector, "mouseleave", event => {
+      removeClass(event.currentTarget, "s-mouseenter");
+      this.overlayHovermask.hide();
+    });
+  }
+  clickEvent() {
+    this.bindEvent(this.dragSelector, "click", event => {
+      addClass(event.currentTarget, "s-active");
     });
   }
   dragstartEvent() {
@@ -114,7 +179,7 @@ class Dnd {
     this.bindEvent(this.dragSelector, "dragend", event => {
       throttle(() => {
         this.currDragElem = null;
-        overlay.hide();
+        this.overlayPlaceholder.hide();
       }, true);
     });
   }
@@ -145,37 +210,37 @@ class Dnd {
           );
           switch (this.direction) {
             case "left":
-              overlay.show({
+              this.overlayPlaceholder.show({
                 mode: "vertical",
-                length: `${currElemDetail.height}px`,
-                top: `${baseTop + currElemDetail.y}px`,
-                left: `${baseLeft + currElemDetail.x}px`
+                length: currElemDetail.height,
+                top: baseTop + currElemDetail.y,
+                left: baseLeft + currElemDetail.x
               });
               break;
             case "right":
-              overlay.show({
+              this.overlayPlaceholder.show({
                 mode: "vertical",
-                length: `${currElemDetail.height}px`,
-                top: `${baseTop + currElemDetail.y}px`,
-                left: `${baseLeft + currElemDetail.x + currElemDetail.width}px`
+                length: currElemDetail.height,
+                top: baseTop + currElemDetail.y,
+                left: baseLeft + currElemDetail.x + currElemDetail.width
               });
               break;
             case "top":
-              overlay.show({
-                length: `${currElemDetail.width}px`,
-                top: `${baseTop + currElemDetail.y}px`,
-                left: `${baseLeft + currElemDetail.x}px`
+              this.overlayPlaceholder.show({
+                length: currElemDetail.width,
+                top: baseTop + currElemDetail.y,
+                left: baseLeft + currElemDetail.x
               });
               break;
             case "bottom":
-              overlay.show({
-                length: `${currElemDetail.width}px`,
-                top: `${baseTop + currElemDetail.y + currElemDetail.height}px`,
-                left: `${baseLeft + currElemDetail.x}px`
+              this.overlayPlaceholder.show({
+                length: currElemDetail.width,
+                top: baseTop + currElemDetail.y + currElemDetail.height,
+                left: baseLeft + currElemDetail.x
               });
               break;
             default:
-              overlay.hide();
+              this.overlayPlaceholder.hide();
               break;
           }
         } else if (this.currDropElem.className.indexOf("dropArea") > -1) {
@@ -185,7 +250,7 @@ class Dnd {
           );
           if (dragEls.length > 0) {
             let lastElemDetail = getElementDetail(dragEls[dragEls.length - 1]);
-            overlay.show({
+            this.overlayPlaceholder.show({
               length: `${lastElemDetail.width}px`,
               top: `${baseTop + lastElemDetail.y + lastElemDetail.height}px`,
               left: `${baseLeft + lastElemDetail.x}px`
@@ -216,6 +281,120 @@ class Dnd {
 }
 
 new Dnd({});
+
+/**
+ * 获取鼠标在元素的定位
+ *
+ * @param: {Object} elem 元素
+ * @param: {Number} offsetX 鼠标x
+ * @param: {Number} offsetY 鼠标y
+ * @return: {String} left|right|top|bottom|null
+ */
+function getPosition(elem, offsetX, offsetY) {
+  const { width, height } = getElementDetail(elem);
+  const THRESHOLD = 20;
+  let widthPos = [0, THRESHOLD, width - THRESHOLD, width];
+  let heightPos = [0, THRESHOLD, height - THRESHOLD, height];
+  let direction = null;
+  if (width > height) {
+    let index = widthPos.findIndex(val => val > offsetX) - 1;
+    direction = ["left", null, "right"][index];
+    if (direction === null) {
+      let index = heightPos.findIndex(val => val > offsetY) - 1;
+      direction = ["top", null, "bottom"][index];
+    }
+  } else {
+    index = heightPos.findIndex(val => val > offsetY) - 1;
+    direction = ["top", null, "bottom"][index];
+    if (direction === null) {
+      let index = widthPos.findIndex(val => val > offsetX) - 1;
+      direction = ["left", null, "right"][index];
+    }
+  }
+  return direction;
+}
+
+/**
+ * 获取元素信息
+ *
+ */
+function getElementDetail(elem) {
+  const x = elem.offsetLeft;
+  const y = elem.offsetTop;
+  const width = elem.offsetWidth;
+  const height = elem.offsetHeight;
+  return { width, height, x, y };
+}
+
+function getOffsetByBody(elem) {
+  let offsetTop = 0;
+  let offsetLeft = 0;
+  while (elem && elem.tagName !== "BODY") {
+    offsetTop += elem.offsetTop;
+    offsetLeft += elem.offsetLeft;
+    elem = elem.offsetParent;
+  }
+  return {
+    offsetTop,
+    offsetLeft
+  };
+}
+
+function getElementPageOffset(element) {
+  var actualLeft = element.offsetLeft;
+  var actualTop = element.offsetTop;
+  var current = element.offsetParent;
+
+  while (current !== null) {
+    actualLeft += current.offsetLeft;
+    actualTop += current.offsetTop;
+    current = current.offsetParent;
+  }
+  return {
+    offsetLeft: actualLeft,
+    offsetTop: actualTop
+  };
+}
+
+/**
+ * 节流
+ *
+ * @param: {String} param description
+ * @return: {String} return
+ */
+// function Throttle() {
+//   const DURATION = 150;
+//   let timer;
+//   let firstTime = true; //记录是否是第一次执行的flag
+
+//   return (fn, isReset = false) => {
+//     let args = arguments; //解决闭包传参问题
+
+//     if (firstTime || isReset) {
+//       //若是第一次，则直接执行
+//       fn.apply(this, args);
+//       if (isReset) {
+//         clearTimeout(timer);
+//         timer = null;
+//         firstTime = true;
+//       } else {
+//         return (firstTime = false);
+//       }
+//     }
+//     if (timer) {
+//       //定时器存在，说明有事件监听器在执行，直接返回
+//       return false;
+//     }
+//     timer = setTimeout(() => {
+//       clearTimeout(timer);
+//       timer = null;
+//       fn.apply(this, args);
+//     }, DURATION);
+//   };
+// }
+
+// const dragEls = document.querySelectorAll(".ui-drag");
+// const dropAreaEls = document.querySelectorAll(".dropArea");
 
 /**
  * 绑定拖拽目标
@@ -322,127 +501,3 @@ new Dnd({});
 //     removeClass(event.target, "s-dragover");
 //   });
 // });
-
-/**
- * 获取鼠标在元素的定位
- *
- * @param: {Object} elem 元素
- * @param: {Number} offsetX 鼠标x
- * @param: {Number} offsetY 鼠标y
- * @return: {String} left|right|top|bottom|null
- */
-function getPosition(elem, offsetX, offsetY) {
-  const { width, height } = getElementDetail(elem);
-  const THRESHOLD = 20;
-  let widthPos = [0, THRESHOLD, width - THRESHOLD, width];
-  let heightPos = [0, THRESHOLD, height - THRESHOLD, height];
-  let direction = null;
-  if (width > height) {
-    let index = widthPos.findIndex(val => val > offsetX) - 1;
-    direction = ["left", null, "right"][index];
-    if (direction === null) {
-      let index = heightPos.findIndex(val => val > offsetY) - 1;
-      direction = ["top", null, "bottom"][index];
-    }
-  } else {
-    index = heightPos.findIndex(val => val > offsetY) - 1;
-    direction = ["top", null, "bottom"][index];
-    if (direction === null) {
-      let index = widthPos.findIndex(val => val > offsetX) - 1;
-      direction = ["left", null, "right"][index];
-    }
-  }
-  return direction;
-}
-
-/**
- * 获取元素信息
- *
- */
-function getElementDetail(elem) {
-  const x = elem.offsetLeft;
-  const y = elem.offsetTop;
-  const width = elem.offsetWidth;
-  const height = elem.offsetHeight;
-  return { width, height, x, y };
-}
-
-function getOffsetByBody(elem) {
-  let offsetTop = 0;
-  let offsetLeft = 0;
-  while (elem && elem.tagName !== "BODY") {
-    offsetTop += elem.offsetTop;
-    offsetLeft += elem.offsetLeft;
-    elem = elem.offsetParent;
-  }
-  return {
-    offsetTop,
-    offsetLeft
-  };
-}
-
-/**
- * 增加类名
- *
- * @param: {String} param description
- * @return: {String} return
- */
-function addClass(elem, name) {
-  let classArrs = elem.className.split(" ");
-  if (!classArrs.includes(name)) {
-    classArrs.push(name);
-    elem.className = classArrs.join(" ");
-  }
-}
-
-/**
- * 移出类名
- *
- * @param: {String} param description
- * @return: {String} return
- */
-function removeClass(elem, name) {
-  let classArrs = elem.className.split(" ");
-  let index = classArrs.findIndex(val => val === name);
-  if (index > -1) {
-    classArrs.splice(index, 1);
-    elem.className = classArrs.join(" ");
-  }
-}
-
-/**
- * 节流
- *
- * @param: {String} param description
- * @return: {String} return
- */
-function Throttle() {
-  const DURATION = 150;
-  let timer;
-  let firstTime = true; //记录是否是第一次执行的flag
-
-  return (fn, isReset = false) => {
-    let args = arguments; //解决闭包传参问题
-
-    if (firstTime || isReset) {
-      //若是第一次，则直接执行
-      fn.apply(this, args);
-      if (isReset) {
-        clearTimeout(timer);
-        timer = null;
-        firstTime = true;
-      } else {
-        return (firstTime = false);
-      }
-    }
-    if (timer) {
-      //定时器存在，说明有事件监听器在执行，直接返回
-      return false;
-    }
-    timer = setTimeout(() => {
-      clearTimeout(timer);
-      timer = null;
-      fn.apply(this, args);
-    }, DURATION);
-  };
-}
