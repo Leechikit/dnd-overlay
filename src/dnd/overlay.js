@@ -12,7 +12,7 @@ import { addClass, removeClass } from "./common";
  */
 let placeholder = {
   elem: null,
-  width: 2,
+  borderWidth: 2,
   createElement(
     { className = "ui-overlay-placeholder" } = {
       className: "ui-overlay-placeholder"
@@ -27,13 +27,13 @@ let placeholder = {
     this.elem.style.top = combinePx(top);
     this.elem.style.left = combinePx(left);
     if (mode === "vertical") {
-      this.elem.style.width = combinePx(this.width);
+      this.elem.style.width = combinePx(this.borderWidth);
       this.elem.style.height = combinePx(length);
       removeClass(this.elem, "s-horizontal");
       addClass(this.elem, "s-vertical");
     } else {
       this.elem.style.width = combinePx(length);
-      this.elem.style.height = combinePx(this.width);
+      this.elem.style.height = combinePx(this.borderWidth);
       removeClass(this.elem, "s-vertical");
       addClass(this.elem, "s-horizontal");
     }
@@ -54,6 +54,7 @@ let hovermask = {
   bottomLineEl: null,
   leftLineEl: null,
   rightLineEl: null,
+  borderWidth: 1,
   createElement(
     { className = "ui-overlay-hovermask" } = {
       className: "ui-overlay-hovermask"
@@ -89,7 +90,7 @@ let hovermask = {
     this.bottomLineEl.style.left = leftPx;
     this.leftLineEl.style.width = heightPx;
     this.leftLineEl.style.top = topPx;
-    this.leftLineEl.style.left = combinePx(left + 1);
+    this.leftLineEl.style.left = combinePx(left + this.borderWidth);
     this.rightLineEl.style.width = heightPx;
     this.rightLineEl.style.top = topPx;
     this.rightLineEl.style.left = combinePx(left + width);
@@ -111,6 +112,7 @@ let activemask = {
   leftLineEl: null,
   rightLineEl: null,
   buttonGroupEl: null,
+  borderWidth: 2,
   createElement(
     { className = "ui-overlay-activemask" } = {
       className: "ui-overlay-activemask"
@@ -150,7 +152,7 @@ let activemask = {
     this.bottomLineEl.style.left = leftPx;
     this.leftLineEl.style.width = heightPx;
     this.leftLineEl.style.top = topPx;
-    this.leftLineEl.style.left = combinePx(left + 2);
+    this.leftLineEl.style.left = combinePx(left + this.borderWidth);
     this.rightLineEl.style.width = heightPx;
     this.rightLineEl.style.top = topPx;
     this.rightLineEl.style.left = combinePx(left + width);

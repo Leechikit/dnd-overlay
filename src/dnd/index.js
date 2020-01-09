@@ -1,6 +1,7 @@
 import "@/assets/styles/base.scss";
 import Throttle from "./throttle";
 import Overlay from "./overlay";
+import uuidv4 from "uuid/v4";
 import { addClass, removeClass } from "./common";
 
 let throttle = new Throttle();
@@ -211,6 +212,10 @@ class Dnd {
   dropEvent() {
     this.bindEvent(this.dropSelector, "drop", event => {
       event.stopPropagation();
+      const id = getElementId(this.currDragElem);
+      if (id === null) {
+        this.currDragElem.setAttribute("data-id", uuidv4());
+      }
       console.log(event.currentTarget);
       console.log(this.currDropElem);
       console.log(this.direction);
@@ -282,6 +287,14 @@ function getElementPageOffset(element) {
     offsetLeft: actualLeft,
     offsetTop: actualTop
   };
+}
+
+/**
+ * 获取元素id
+ *
+ */
+function getElementId(element) {
+  return element.getAttribute("data-id") || null;
 }
 
 export default Dnd;
