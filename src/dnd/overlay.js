@@ -14,8 +14,8 @@ let placeholder = {
   elem: null,
   borderWidth: 2,
   createElement(
-    { className = "ui-overlay-placeholder" } = {
-      className: "ui-overlay-placeholder"
+    { className = "dnd-overlay-placeholder" } = {
+      className: "dnd-overlay-placeholder"
     }
   ) {
     this.elem = document.createElement("div");
@@ -56,8 +56,8 @@ let hovermask = {
   rightLineEl: null,
   borderWidth: 1,
   createElement(
-    { className = "ui-overlay-hovermask" } = {
-      className: "ui-overlay-hovermask"
+    { className = "dnd-overlay-hovermask" } = {
+      className: "dnd-overlay-hovermask"
     }
   ) {
     this.elem = document.createElement("div");
@@ -114,8 +114,8 @@ let activemask = {
   buttonGroupEl: null,
   borderWidth: 2,
   createElement(
-    { className = "ui-overlay-activemask" } = {
-      className: "ui-overlay-activemask"
+    { className = "dnd-overlay-activemask" } = {
+      className: "dnd-overlay-activemask"
     }
   ) {
     this.elem = document.createElement("div");
@@ -168,6 +168,14 @@ let activemask = {
     this.elem.style.display = "none";
   }
 };
+
+/**
+ * 拖拽图片
+ *
+ */
+let dragCanvas = {
+
+}
 
 /**
  * 拼接px

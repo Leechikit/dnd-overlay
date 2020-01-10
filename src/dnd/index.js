@@ -1,4 +1,4 @@
-import "@/assets/styles/base.scss";
+import "@/assets/styles/overlay.scss";
 import Throttle from "./throttle";
 import Overlay from "./overlay";
 import uuidv4 from "uuid/v4";
@@ -9,10 +9,10 @@ let throttle = new Throttle();
 class Dnd {
   constructor(
     {
-      dragSelector = ".ui-drag",
-      dropSelector = ".dropArea",
+      dragSelector = ".dnd-drag",
+      dropSelector = ".dnd-droparea",
       onDragStart = function() {}
-    } = { dragSelector: ".ui-drag", dropSelector: ".dropArea" }
+    } = { dragSelector: ".dnd-drag", dropSelector: ".dnd-droparea" }
   ) {
     this.dragSelector = dragSelector;
     this.dropSelector = dropSelector;
@@ -26,6 +26,7 @@ class Dnd {
     this.init();
   }
   init() {
+    this.initDraggable();
     this.createOverlay();
     this.mouseenterEvent();
     this.mouseleaveEvent();
@@ -36,26 +37,31 @@ class Dnd {
     this.dragleaveEvent();
     this.dropEvent();
   }
+  initDraggable() {
+    Array.from(document.querySelectorAll(this.dragSelector)).forEach(elem => {
+      elem.setAttribute("draggable", true);
+    });
+  }
   createOverlay() {
     let overlay = Overlay.init();
     this.overlayPlaceholder = overlay.placeholder;
     this.overlayHovermask = overlay.hovermask;
     this.overlayActivemask = overlay.activemask;
-    let overlayEl = this.overlayPlaceholder.elem;
-    overlayEl.addEventListener("dragenter", function(event) {
+    let overlayPlaceholderEl = this.overlayPlaceholder.elem;
+    overlayPlaceholderEl.addEventListener("dragenter", function(event) {
       throttle(() => {
-        overlayEl.style.display = "block";
+        overlayPlaceholderEl.style.display = "block";
       }, true);
     });
-    overlayEl.addEventListener("dragover", function(event) {
+    overlayPlaceholderEl.addEventListener("dragover", function(event) {
       event.preventDefault();
       throttle(() => {
-        overlayEl.style.display = "block";
+        overlayPlaceholderEl.style.display = "block";
       }, true);
     });
-    overlayEl.addEventListener("dragleave", function(event) {
+    overlayPlaceholderEl.addEventListener("dragleave", function(event) {
       throttle(() => {
-        overlayEl.style.display = "block";
+        overlayPlaceholderEl.style.display = "block";
       }, true);
     });
   }
@@ -141,7 +147,7 @@ class Dnd {
         addClass(this.currDropElem, "s-dragover");
         if (
           this.currDropElem !== event.currentTarget &&
-          this.currDropElem.className.indexOf("ui-drag") > -1
+          this.currDropElem.getAttribute("draggable") === "true"
         ) {
           let currElemDetail = getElementDetail(this.currDropElem);
           this.direction = getPosition(
@@ -216,10 +222,14 @@ class Dnd {
       if (id === null) {
         this.currDragElem.setAttribute("data-id", uuidv4());
       }
-      console.log(event.currentTarget);
-      console.log(this.currDropElem);
-      console.log(this.direction);
+      // 放置目标是否布局控件
+      console.log(findDragItem(event.currentTarget));
+      // 拖拽项目
       console.log(this.currDragElem);
+      // 放置位置相对于的拖拽项目
+      console.log(this.currDropElem);
+      // 放置位置
+      console.log(this.direction);
       removeClass(event.target, "s-dragover");
     });
   }
@@ -295,6 +305,24 @@ function getElementPageOffset(element) {
  */
 function getElementId(element) {
   return element.getAttribute("data-id") || null;
+}
+
+/**
+ * 查找放置目标所在拖拽项目
+ *
+ */
+function findDragItem(elem) {
+  let current = elem.parentNode;
+  let parentDragItem = null;
+  let timer = 0;
+  while (current.tagName !== "BODY") {
+    if (current.getAttribute("draggable") === "true") {
+      parentDragItem = current;
+      break;
+    }
+    current = current.parentNode;
+  }
+  return parentDragItem;
 }
 
 export default Dnd;
