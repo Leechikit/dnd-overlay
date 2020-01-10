@@ -11,11 +11,13 @@ class Dnd {
     {
       dragSelector = '.dnd-drag',
       dropSelector = '.dnd-droparea',
+      dropContainerSelector,
       onDragStart = function() {}
     } = { dragSelector: '.dnd-drag', dropSelector: '.dnd-droparea' }
   ) {
     this.dragSelector = dragSelector
     this.dropSelector = dropSelector
+    this.dropContainerSelector = dropContainerSelector
     this.onDragStart = onDragStart
     this.direction = null
     this.currDragElem = null
@@ -43,11 +45,19 @@ class Dnd {
     })
   }
   createOverlay() {
-    let overlay = Overlay.init()
+    let overlay = Overlay.init({
+      containerSelector: this.dropContainerSelector
+    })
     this.overlayPlaceholder = overlay.placeholder
     this.overlayHovermask = overlay.hovermask
     this.overlayActivemask = overlay.activemask
     let overlayPlaceholderEl = this.overlayPlaceholder.elem
+    if (this.dropContainerSelector !== void 0) {
+      let containerEl = document.querySelector(this.dropContainerSelector)
+      if (containerEl && containerEl.style.position === 'static') {
+        containerEl.style.position = 'relative'
+      }
+    }
     overlayPlaceholderEl.addEventListener('dragenter', function(event) {
       throttle(() => {
         overlayPlaceholderEl.style.display = 'block'
@@ -83,7 +93,10 @@ class Dnd {
       event => {
         let currentTarget = event.currentTarget
         let currElemDetail = getElementDetail(currentTarget)
-        let currElemOffset = getElementPageOffset(currentTarget)
+        let currElemOffset = getElementContainerOffset(
+          currentTarget,
+          this.dropContainerSelector
+        )
         addClass(currentTarget, 's-mouseenter')
         this.overlayHovermask.show({
           left: currElemOffset.offsetLeft,
@@ -105,7 +118,10 @@ class Dnd {
       event.stopPropagation()
       let currentTarget = event.currentTarget
       let currElemDetail = getElementDetail(currentTarget)
-      let currElemOffset = getElementPageOffset(currentTarget)
+      let currElemOffset = getElementContainerOffset(
+        currentTarget,
+        this.dropContainerSelector
+      )
       Array.from(document.querySelectorAll(this.dragSelector)).forEach(elem => {
         removeClass(elem, 's-active')
       })
@@ -141,9 +157,10 @@ class Dnd {
       throttle(() => {
         this.currDropElem = event.target
         this.direction = null
-        let { offsetLeft: baseLeft, offsetTop: baseTop } = getElementPageOffset(
-          currentTarget
-        )
+        let {
+          offsetLeft: baseLeft,
+          offsetTop: baseTop
+        } = getElementContainerOffset(currentTarget, this.dropContainerSelector)
         addClass(this.currDropElem, 's-dragover')
         if (
           this.currDropElem !== event.currentTarget &&
@@ -190,10 +207,14 @@ class Dnd {
               this.overlayPlaceholder.hide()
               break
           }
-        } else if (this.currDropElem.className.indexOf('dropArea') > -1) {
+        } else if (
+          Array.from(document.querySelectorAll(this.dropSelector)).includes(
+            this.currDropElem
+          )
+        ) {
           let dragEls = Array.from(this.currDropElem.childNodes).filter(
             item =>
-              item.nodeType === 1 && item.className.indexOf('ui-drag') > -1
+              item.nodeType === 1 && item.getAttribute('draggable') === 'true'
           )
           if (dragEls.length > 0) {
             let lastElemDetail = getElementDetail(dragEls[dragEls.length - 1])
@@ -280,15 +301,16 @@ function getElementDetail(elem) {
 }
 
 /**
- * 获取元素相对页面的offset
+ * 获取元素相对container的offset
  *
  */
-function getElementPageOffset(element) {
-  var actualLeft = element.offsetLeft
-  var actualTop = element.offsetTop
-  var current = element.offsetParent
+function getElementContainerOffset(element, containerSelector) {
+  let actualLeft = element.offsetLeft
+  let actualTop = element.offsetTop
+  let current = element.offsetParent
+  let containerEl = document.querySelector(containerSelector)
 
-  while (current !== null) {
+  while (current !== containerEl) {
     actualLeft += current.offsetLeft
     actualTop += current.offsetTop
     current = current.offsetParent

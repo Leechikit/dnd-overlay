@@ -17,7 +17,7 @@
 }
 .dnd-overlay-placeholder {
   position: absolute;
-  z-index: 3;
+  z-index: 2;
   color: orange;
   background-color: currentColor;
   &::before {

@@ -14,14 +14,15 @@ let placeholder = {
   elem: null,
   borderWidth: 2,
   createElement(
-    { className = 'dnd-overlay-placeholder' } = {
-      className: 'dnd-overlay-placeholder'
+    { className = 'dnd-overlay-placeholder', containerSelector = 'body' } = {
+      className: 'dnd-overlay-placeholder',
+      containerSelector: 'body'
     }
   ) {
     this.elem = document.createElement('div')
     this.elem.className = className
     this.elem.style.display = 'none'
-    document.body.appendChild(this.elem)
+    document.querySelector(containerSelector).appendChild(this.elem)
   },
   show({ top, left, length, mode = 'horizontal' }) {
     this.elem.style.top = combinePx(top)
@@ -56,8 +57,9 @@ let hovermask = {
   rightLineEl: null,
   borderWidth: 1,
   createElement(
-    { className = 'dnd-overlay-hovermask' } = {
-      className: 'dnd-overlay-hovermask'
+    { className = 'dnd-overlay-hovermask', containerSelector = 'body' } = {
+      className: 'dnd-overlay-hovermask',
+      containerSelector: 'body'
     }
   ) {
     this.elem = document.createElement('div')
@@ -75,7 +77,7 @@ let hovermask = {
     this.elem.appendChild(this.bottomLineEl)
     this.elem.appendChild(this.leftLineEl)
     this.elem.appendChild(this.rightLineEl)
-    document.body.appendChild(this.elem)
+    document.querySelector(containerSelector).appendChild(this.elem)
   },
   show({ top, left, width, height }) {
     let topPx = combinePx(top)
@@ -114,8 +116,9 @@ let activemask = {
   buttonGroupEl: null,
   borderWidth: 2,
   createElement(
-    { className = 'dnd-overlay-activemask' } = {
-      className: 'dnd-overlay-activemask'
+    { className = 'dnd-overlay-activemask', containerSelector = 'body' } = {
+      className: 'dnd-overlay-activemask',
+      containerSelector: 'body'
     }
   ) {
     this.elem = document.createElement('div')
@@ -137,7 +140,7 @@ let activemask = {
     this.elem.appendChild(this.leftLineEl)
     this.elem.appendChild(this.rightLineEl)
     this.elem.appendChild(this.buttonGroupEl)
-    document.body.appendChild(this.elem)
+    document.querySelector(containerSelector).appendChild(this.elem)
   },
   show({ top, left, width, height }) {
     let topPx = combinePx(top)
@@ -184,10 +187,10 @@ function combinePx(number) {
   return (number + '').indexOf('px') > -1 ? number : `${number}px`
 }
 
-function init() {
-  placeholder.createElement()
-  hovermask.createElement()
-  activemask.createElement()
+function init({ containerSelector } = {}) {
+  placeholder.createElement({ containerSelector })
+  hovermask.createElement({ containerSelector })
+  activemask.createElement({ containerSelector })
   return {
     placeholder,
     hovermask,
