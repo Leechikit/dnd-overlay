@@ -2,6 +2,6 @@ import './index.html'
 import './assets/styles/base.scss'
 import Dnd from './dnd'
 
-new Dnd({
-  dropContainerSelector: '#dropContainer'
+let dnd = new Dnd({
+  dropContainerSelector: '#container'
 })

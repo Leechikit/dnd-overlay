@@ -1,4 +1,15 @@
-.dnd-droparea {
+.fd-dnd-area {
+  &:empty {
+    &::after {
+      content: "请选择左侧组件";
+      display: block;
+      width: 100%;
+      height: 80px;
+      line-height: 80px;
+      text-align: center;
+      color: #aaa;
+    }
+  }
   &.s-dragover {
     &:empty {
       &::after {
@@ -114,6 +125,9 @@
       line-height: 30px;
       text-align: center;
       cursor: pointer;
+      &:hover {
+        color: #ddd;
+      }
     }
   }
 }

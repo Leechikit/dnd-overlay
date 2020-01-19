@@ -1,177 +1,228 @@
-import '@/assets/styles/overlay.scss'
+import './dnd.scss'
 import Throttle from './throttle'
 import Overlay from './overlay'
-import uuidv4 from 'uuid/v4'
-import { addClass, removeClass } from './common'
+import Utils from '@/helper/utils'
 
 let throttle = new Throttle()
 
 class Dnd {
-  constructor(
+  constructor (
     {
       dragSelector = '.dnd-drag',
       dropSelector = '.dnd-droparea',
       dropContainerSelector,
-      onDragStart = function() {}
+      onDragstart = function () {},
+      onDragend = function () {},
+      onDragover = function () {},
+      onDragleave = function () {},
+      onDrop = function () {},
+      onActive = function () {},
+      onDelete = function () {},
+      onCopy = function () {}
     } = { dragSelector: '.dnd-drag', dropSelector: '.dnd-droparea' }
   ) {
     this.dragSelector = dragSelector
     this.dropSelector = dropSelector
     this.dropContainerSelector = dropContainerSelector
-    this.onDragStart = onDragStart
+    this.onDragstart = onDragstart
+    this.onDragend = onDragend
+    this.onDragover = onDragover
+    this.onDragleave = onDragleave
+    this.onDrop = onDrop
+    this.onActive = onActive
+    this.onDelete = onDelete
+    this.onCopy = onCopy
     this.direction = null
     this.currDragElem = null
-    this.currDropElem = null
-    this.throttle = new Throttle()
+    this.relativeDragElem = null
+    this.currActiveElem = null
     this.overlayPlaceholder = null
     this.overlayHovermask = null
     this.init()
+    return this
   }
-  init() {
+  init () {
     this.initDraggable()
     this.createOverlay()
-    this.mouseenterEvent()
-    this.mouseleaveEvent()
+    this.mouseoverEvent()
+    this.mouseoutEvent()
     this.clickEvent()
     this.dragstartEvent()
     this.dragendEvent()
     this.dragoverEvent()
     this.dragleaveEvent()
     this.dropEvent()
+    this.resizeEvent()
+    if (this.currActiveElem) {
+      this.activeHandle(this.currActiveElem)
+    }
   }
-  initDraggable() {
+  initDraggable () {
     Array.from(document.querySelectorAll(this.dragSelector)).forEach(elem => {
+      let elemPosition = getComputedStyle(elem).getPropertyValue('position')
       elem.setAttribute('draggable', true)
+      elemPosition === 'static' && (elem.style.position = 'relative')
     })
   }
-  createOverlay() {
+  createOverlay () {
     let overlay = Overlay.init({
-      containerSelector: this.dropContainerSelector
+      containerSelector: this.dropContainerSelector,
+      onDelete: this.onDelete,
+      onCopy: this.onCopy
     })
     this.overlayPlaceholder = overlay.placeholder
     this.overlayHovermask = overlay.hovermask
     this.overlayActivemask = overlay.activemask
+    this.overlayDragcanvas = overlay.dragcanvas
     let overlayPlaceholderEl = this.overlayPlaceholder.elem
     if (this.dropContainerSelector !== void 0) {
       let containerEl = document.querySelector(this.dropContainerSelector)
-      if (containerEl && containerEl.style.position === 'static') {
+      let containerPosition = getComputedStyle(containerEl).getPropertyValue(
+        'position'
+      )
+      if (containerEl && containerPosition === 'static') {
         containerEl.style.position = 'relative'
       }
     }
-    overlayPlaceholderEl.addEventListener('dragenter', function(event) {
+    overlayPlaceholderEl.addEventListener('dragenter', function (event) {
       throttle(() => {
         overlayPlaceholderEl.style.display = 'block'
       }, true)
     })
-    overlayPlaceholderEl.addEventListener('dragover', function(event) {
+    overlayPlaceholderEl.addEventListener('dragover', function (event) {
       event.preventDefault()
       throttle(() => {
         overlayPlaceholderEl.style.display = 'block'
       }, true)
     })
-    overlayPlaceholderEl.addEventListener('dragleave', function(event) {
+    overlayPlaceholderEl.addEventListener('dragleave', function (event) {
       throttle(() => {
         overlayPlaceholderEl.style.display = 'block'
       }, true)
     })
   }
-  bindEvent(selector, event, callback, useCapture = false) {
+  bindEvent (selector, event, func, useCapture = false) {
     Array.from(document.querySelectorAll(selector)).forEach(elem => {
-      elem.addEventListener(
-        event,
-        function(event) {
-          typeof callback === 'function' && callback.call(this, event)
-        },
-        useCapture
-      )
+      elem.addEventListener(event, func, useCapture)
     })
   }
-  mouseenterEvent() {
+  removeEvent (selector, event, func, useCapture = false) {
+    Array.from(document.querySelectorAll(selector)).forEach(elem => {
+      elem.removeEventListener(event, func, useCapture)
+    })
+  }
+  mouseoverEvent () {
     this.bindEvent(
       `${this.dropSelector} ${this.dragSelector}`,
-      'mouseenter',
+      'mouseover',
       event => {
-        let currentTarget = event.currentTarget
-        let currElemDetail = getElementDetail(currentTarget)
-        let currElemOffset = getElementContainerOffset(
-          currentTarget,
-          this.dropContainerSelector
-        )
-        addClass(currentTarget, 's-mouseenter')
-        this.overlayHovermask.show({
-          left: currElemOffset.offsetLeft,
-          top: currElemOffset.offsetTop,
-          width: currElemDetail.width,
-          height: currElemDetail.height
-        })
+        event.stopPropagation()
+        if (this.currDragElem === null) {
+          let currentTarget = event.currentTarget
+          let currElemDetail = getElementDetail(currentTarget)
+          let currElemOffset = getElementContainerOffset(
+            currentTarget,
+            this.dropContainerSelector
+          )
+          this.overlayHovermask.show({
+            left: currElemOffset.offsetLeft,
+            top: currElemOffset.offsetTop,
+            width: currElemDetail.width,
+            height: currElemDetail.height
+          })
+        }
       }
     )
   }
-  mouseleaveEvent() {
-    this.bindEvent(this.dragSelector, 'mouseleave', event => {
-      removeClass(event.currentTarget, 's-mouseenter')
-      this.overlayHovermask.hide()
-    })
+  mouseoutEvent () {
+    this.bindEvent(
+      `${this.dropSelector} ${this.dragSelector}`,
+      'mouseout',
+      event => {
+        Utils.removeClass(event.currentTarget, 's-mouseover')
+        this.overlayHovermask.hide()
+      }
+    )
   }
-  clickEvent() {
-    this.bindEvent(this.dragSelector, 'click', event => {
-      event.stopPropagation()
-      let currentTarget = event.currentTarget
-      let currElemDetail = getElementDetail(currentTarget)
+  clickEvent () {
+    this.bindEvent(
+      `${this.dropSelector} ${this.dragSelector}`,
+      'click',
+      event => {
+        event.stopPropagation()
+        this.activeHandle(event.currentTarget)
+      }
+    )
+  }
+  activeHandle (elem, resize = false) {
+    let activeId = getElementId(this.currActiveElem)
+    if ((elem && this.currActiveElem !== elem) || resize) {
+      this.currActiveElem = elem
+      let currElemDetail = getElementDetail(this.currActiveElem)
       let currElemOffset = getElementContainerOffset(
-        currentTarget,
+        this.currActiveElem,
         this.dropContainerSelector
       )
+      let parentId = getElementId(findDragItem(this.currActiveElem))
       Array.from(document.querySelectorAll(this.dragSelector)).forEach(elem => {
-        removeClass(elem, 's-active')
+        Utils.removeClass(elem, 's-active')
       })
-      addClass(currentTarget, 's-active')
+      Utils.addClass(this.currActiveElem, 's-active')
+      activeId = getElementId(this.currActiveElem)
       this.overlayActivemask.show({
         left: currElemOffset.offsetLeft,
         top: currElemOffset.offsetTop,
         width: currElemDetail.width,
-        height: currElemDetail.height
+        height: currElemDetail.height,
+        activeId,
+        parentId
       })
-    })
+    } else if (elem === null) {
+      activeId = null
+    }
+    typeof this.onActive === 'function' && this.onActive(activeId, event)
   }
-  dragstartEvent() {
+  dragstartEvent () {
     this.bindEvent(this.dragSelector, 'dragstart', event => {
+      event.stopPropagation()
       this.currDragElem = event.currentTarget
-      removeClass(event.currentTarget, 's-mouseenter')
+      this.overlayDragcanvas.change(this.currDragElem.innerText)
+      event.dataTransfer.setDragImage(this.overlayDragcanvas.elem, 30, 20)
+      Utils.removeClass(this.currDragElem, 's-mouseover')
       this.overlayHovermask.hide()
+      typeof this.onDragstart === 'function' && this.onDragstart(event)
     })
   }
-  dragendEvent() {
+  dragendEvent () {
     this.bindEvent(this.dragSelector, 'dragend', event => {
       throttle(() => {
         this.currDragElem = null
         this.overlayPlaceholder.hide()
+        typeof this.onDragend === 'function' && this.onDragend(event)
       }, true)
     })
   }
-  dragoverEvent() {
+  dragoverEvent () {
     this.bindEvent(this.dropSelector, 'dragover', event => {
-      let currentTarget = event.currentTarget
       event.preventDefault()
       event.stopPropagation()
+      let currentTarget = event.currentTarget
       throttle(() => {
-        this.currDropElem = event.target
-        this.direction = null
+        let currDropElem = event.target
         let {
           offsetLeft: baseLeft,
           offsetTop: baseTop
         } = getElementContainerOffset(currentTarget, this.dropContainerSelector)
-        addClass(this.currDropElem, 's-dragover')
-        if (
-          this.currDropElem !== event.currentTarget &&
-          this.currDropElem.getAttribute('draggable') === 'true'
-        ) {
-          let currElemDetail = getElementDetail(this.currDropElem)
-          this.direction = getPosition(
-            this.currDropElem,
-            event.offsetX,
-            event.offsetY
-          )
+        this.relativeDragElem = findDragItem(event.target, true)
+        let { offsetX, offsetY } = findDragOffset(event)
+        this.direction = null
+        if (this.relativeDragElem) {
+          Utils.addClass(this.relativeDragElem, 's-dragover')
+        }
+        Utils.addClass(currentTarget, 's-dragover')
+        if (this.relativeDragElem && currDropElem !== currentTarget) {
+          let currElemDetail = getElementDetail(this.relativeDragElem)
+          this.direction = getPosition(this.relativeDragElem, offsetX, offsetY)
           switch (this.direction) {
             case 'left':
               this.overlayPlaceholder.show({
@@ -209,49 +260,76 @@ class Dnd {
           }
         } else if (
           Array.from(document.querySelectorAll(this.dropSelector)).includes(
-            this.currDropElem
+            currDropElem
           )
         ) {
-          let dragEls = Array.from(this.currDropElem.childNodes).filter(
+          let dragEls = Array.from(currDropElem.childNodes).filter(
             item =>
               item.nodeType === 1 && item.getAttribute('draggable') === 'true'
           )
           if (dragEls.length > 0) {
-            let lastElemDetail = getElementDetail(dragEls[dragEls.length - 1])
+            let lastElem = dragEls[dragEls.length - 1]
+            let lastElemDetail = getElementDetail(lastElem)
             this.overlayPlaceholder.show({
               length: `${lastElemDetail.width}px`,
               top: `${baseTop + lastElemDetail.y + lastElemDetail.height}px`,
               left: `${baseLeft + lastElemDetail.x}px`
             })
+            this.relativeDragElem = lastElem
+            this.direction = 'bottom'
           }
         }
+        typeof this.onDragover === 'function' && this.onDragover(event)
       })
     })
   }
-  dragleaveEvent() {
+  dragleaveEvent () {
     this.bindEvent(this.dropSelector, 'dragleave', event => {
       event.stopPropagation()
       throttle(() => {
-        removeClass(event.target, 's-dragover')
+        Utils.removeClass(event.target, 's-dragover')
+        typeof this.onDragleave === 'function' && this.onDragleave(event)
       }, true)
     })
   }
-  dropEvent() {
+  dropEvent () {
     this.bindEvent(this.dropSelector, 'drop', event => {
       event.stopPropagation()
-      const id = getElementId(this.currDragElem)
-      if (id === null) {
-        this.currDragElem.setAttribute('data-id', uuidv4())
+      let dragId = getElementId(this.currDragElem)
+      let type = 'change'
+      let index = null
+      if (dragId === null) {
+        type = 'add'
+        dragId = Utils.guid()
+        index = this.currDragElem.getAttribute('data-key')
       }
       // 放置目标是否布局控件
-      console.log(findDragItem(event.currentTarget))
-      // 拖拽项目
-      console.log(this.currDragElem)
+      let parentId = getElementId(findDragItem(event.currentTarget))
       // 放置位置相对于的拖拽项目
-      console.log(this.currDropElem)
+      let siblingId = getElementId(this.relativeDragElem)
       // 放置位置
-      console.log(this.direction)
-      removeClass(event.target, 's-dragover')
+      let relativePos =
+        this.direction === 'left' || this.direction === 'top' ? 'prev' : 'next'
+      Utils.removeClass(event.target, 's-dragover')
+      typeof this.onDrop === 'function' &&
+        this.onDrop(
+          {
+            type,
+            parentId,
+            dragId,
+            siblingId,
+            relativePos,
+            index: +index
+          },
+          event
+        )
+    })
+  }
+  resizeEvent () {
+    window.addEventListener('resize', event => {
+      if (this.currActiveElem) {
+        this.activeHandle(this.currActiveElem, true)
+      }
     })
   }
 }
@@ -264,13 +342,14 @@ class Dnd {
  * @param: {Number} offsetY 鼠标y
  * @return: {String} left|right|top|bottom|null
  */
-function getPosition(elem, offsetX, offsetY) {
+function getPosition (elem, offsetX, offsetY) {
   const { width, height } = getElementDetail(elem)
   const THRESHOLD = 20
-  let widthPos = [0, THRESHOLD, width - THRESHOLD, width]
-  let heightPos = [0, THRESHOLD, height - THRESHOLD, height]
   let direction = null
   if (width > height) {
+    let verticalThreshold = height / 2
+    let widthPos = [0, THRESHOLD, width - THRESHOLD, width]
+    let heightPos = [0, verticalThreshold, height - verticalThreshold, height]
     let index = widthPos.findIndex(val => val > offsetX) - 1
     direction = ['left', null, 'right'][index]
     if (direction === null) {
@@ -278,6 +357,9 @@ function getPosition(elem, offsetX, offsetY) {
       direction = ['top', null, 'bottom'][index]
     }
   } else {
+    let horizontalThreshold = width / 2
+    let widthPos = [0, horizontalThreshold, width - horizontalThreshold, width]
+    let heightPos = [0, THRESHOLD, height - THRESHOLD, height]
     let index = heightPos.findIndex(val => val > offsetY) - 1
     direction = ['top', null, 'bottom'][index]
     if (direction === null) {
@@ -292,7 +374,7 @@ function getPosition(elem, offsetX, offsetY) {
  * 获取元素信息
  *
  */
-function getElementDetail(elem) {
+function getElementDetail (elem) {
   const x = elem.offsetLeft
   const y = elem.offsetTop
   const width = elem.offsetWidth
@@ -304,13 +386,12 @@ function getElementDetail(elem) {
  * 获取元素相对container的offset
  *
  */
-function getElementContainerOffset(element, containerSelector) {
-  let actualLeft = element.offsetLeft
-  let actualTop = element.offsetTop
-  let current = element.offsetParent
+function getElementContainerOffset (elem, containerSelector) {
+  let actualLeft = 0
+  let actualTop = 0
+  let current = elem
   let containerEl = document.querySelector(containerSelector)
-
-  while (current !== containerEl) {
+  while (current && current !== containerEl) {
     actualLeft += current.offsetLeft
     actualTop += current.offsetTop
     current = current.offsetParent
@@ -325,18 +406,18 @@ function getElementContainerOffset(element, containerSelector) {
  * 获取元素id
  *
  */
-function getElementId(element) {
-  return element.getAttribute('data-id') || null
+function getElementId (elem) {
+  return (elem && elem.id) || null
 }
 
 /**
  * 查找放置目标所在拖拽项目
  *
  */
-function findDragItem(elem) {
-  let current = elem.parentNode
+function findDragItem (elem, includeSelf = false) {
+  let current = includeSelf ? elem : elem.parentNode
   let parentDragItem = null
-  while (current.tagName !== 'BODY') {
+  while (current && current.tagName !== 'BODY') {
     if (current.getAttribute('draggable') === 'true') {
       parentDragItem = current
       break
@@ -344,6 +425,28 @@ function findDragItem(elem) {
     current = current.parentNode
   }
   return parentDragItem
+}
+
+/**
+ * 查找鼠标坐在拖拽项目坐标
+ *
+ */
+function findDragOffset (event) {
+  let current = event.target
+  let offsetX = event.offsetX
+  let offsetY = event.offsetY
+  while (current && current.tagName !== 'BODY') {
+    if (current.getAttribute('draggable') === 'true') {
+      break
+    }
+    offsetX += current.offsetLeft
+    offsetY += current.offsetTop
+    current = current.parentNode
+  }
+  return {
+    offsetX,
+    offsetY
+  }
 }
 
 export default Dnd

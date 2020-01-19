@@ -8,17 +8,17 @@
  */
 const DURATION = 150
 export default class Throttle {
-  constructor({ duration = DURATION } = { duration: DURATION }) {
+  constructor ({ duration = DURATION } = { duration: DURATION }) {
     this.duration = duration
     this.timer = null
-    this.firstTime = true //记录是否是第一次执行的flag
+    this.firstTime = true // 记录是否是第一次执行的flag
     return this.handler.bind(this)
   }
-  handler(fn, isReset = false) {
-    let args = arguments //解决闭包传参问题
+  handler (fn, isReset = false) {
+    let args = arguments // 解决闭包传参问题
 
     if (this.firstTime || isReset) {
-      //若是第一次，则直接执行
+      // 若是第一次，则直接执行
       fn.apply(this, args)
       if (isReset) {
         clearTimeout(this.timer)
@@ -29,7 +29,7 @@ export default class Throttle {
       }
     }
     if (this.timer) {
-      //定时器存在，说明有事件监听器在执行，直接返回
+      // 定时器存在，说明有事件监听器在执行，直接返回
       return false
     }
     this.timer = setTimeout(() => {
