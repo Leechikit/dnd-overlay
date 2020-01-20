@@ -63,18 +63,6 @@ let hovermask = {
     this.elem = document.createElement('div')
     this.elem.className = className
     this.elem.style.display = 'none'
-    this.topLineEl = document.createElement('div')
-    this.bottomLineEl = document.createElement('div')
-    this.leftLineEl = document.createElement('div')
-    this.rightLineEl = document.createElement('div')
-    this.topLineEl.className = `${className}-line ${className}-topline`
-    this.bottomLineEl.className = `${className}-line ${className}-bottomline`
-    this.leftLineEl.className = `${className}-line ${className}-leftline`
-    this.rightLineEl.className = `${className}-line ${className}-rightline`
-    this.elem.appendChild(this.topLineEl)
-    this.elem.appendChild(this.bottomLineEl)
-    this.elem.appendChild(this.leftLineEl)
-    this.elem.appendChild(this.rightLineEl)
     containerEl.appendChild(this.elem)
   },
   show ({ top, left, width, height }) {
@@ -82,18 +70,9 @@ let hovermask = {
     let leftPx = combinePx(left)
     let widthPx = combinePx(width)
     let heightPx = combinePx(height)
-    this.topLineEl.style.width = widthPx
-    this.topLineEl.style.top = topPx
-    this.topLineEl.style.left = leftPx
-    this.bottomLineEl.style.width = widthPx
-    this.bottomLineEl.style.top = combinePx(top + height)
-    this.bottomLineEl.style.left = leftPx
-    this.leftLineEl.style.width = heightPx
-    this.leftLineEl.style.top = topPx
-    this.leftLineEl.style.left = combinePx(left + this.borderWidth)
-    this.rightLineEl.style.width = heightPx
-    this.rightLineEl.style.top = topPx
-    this.rightLineEl.style.left = combinePx(left + width)
+    this.elem.style.width = widthPx
+    this.elem.style.height = heightPx
+    this.elem.style.transform = `translate(${leftPx},${topPx})`
     this.elem.style.display = 'block'
   },
   hide () {
@@ -130,21 +109,9 @@ let activemask = {
     this.elem = document.createElement('div')
     this.elem.className = className
     this.elem.style.display = 'none'
-    this.topLineEl = document.createElement('div')
-    this.bottomLineEl = document.createElement('div')
-    this.leftLineEl = document.createElement('div')
-    this.rightLineEl = document.createElement('div')
     this.buttonGroupEl = document.createElement('div')
-    this.topLineEl.className = `${className}-line ${className}-topline`
-    this.bottomLineEl.className = `${className}-line ${className}-bottomline`
-    this.leftLineEl.className = `${className}-line ${className}-leftline`
-    this.rightLineEl.className = `${className}-line ${className}-rightline`
     this.buttonGroupEl.className = `${className}-buttons`
     this.buttonGroupEl.innerHTML = `<span class="${className}-copy">复制</span> | <span class="${className}-delete">删除</span>`
-    this.elem.appendChild(this.topLineEl)
-    this.elem.appendChild(this.bottomLineEl)
-    this.elem.appendChild(this.leftLineEl)
-    this.elem.appendChild(this.rightLineEl)
     this.elem.appendChild(this.buttonGroupEl)
     this.containerEl = containerEl
     containerEl.appendChild(this.elem)
@@ -157,24 +124,15 @@ let activemask = {
     let heightPx = combinePx(height)
     this.activeId = activeId
     this.parentId = parentId
-    this.topLineEl.style.width = widthPx
-    this.topLineEl.style.top = topPx
-    this.topLineEl.style.left = leftPx
-    this.bottomLineEl.style.width = widthPx
-    this.bottomLineEl.style.top = combinePx(top + height)
-    this.bottomLineEl.style.left = leftPx
-    this.leftLineEl.style.width = heightPx
-    this.leftLineEl.style.top = topPx
-    this.leftLineEl.style.left = combinePx(left + this.borderWidth)
-    this.rightLineEl.style.width = heightPx
-    this.rightLineEl.style.top = topPx
-    this.rightLineEl.style.left = combinePx(left + width)
-    this.buttonGroupEl.style.left = combinePx(left + width - 80)
+    this.buttonGroupEl.style.left = combinePx(width - 80)
     if (top > 30) {
-      this.buttonGroupEl.style.top = combinePx(top - 30)
+      this.buttonGroupEl.style.top = combinePx(- 30)
     } else {
-      this.buttonGroupEl.style.top = combinePx(top + height)
+      this.buttonGroupEl.style.top = combinePx(height)
     }
+    this.elem.style.width = widthPx
+    this.elem.style.height = heightPx
+    this.elem.style.transform = `translate(${leftPx},${topPx})`
     this.elem.style.display = 'block'
   },
   hide () {

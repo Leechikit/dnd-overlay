@@ -26,6 +26,14 @@
     }
   }
 }
+.fd-dnd-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  width: 0;
+  height: 0;
+}
 .dnd-overlay-placeholder {
   position: absolute;
   z-index: 2;
@@ -76,37 +84,17 @@
 }
 .dnd-overlay-hovermask {
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 0;
-  height: 0;
   color: #3396fb;
-  &-line {
-    position: absolute;
-    border-top: 1px dashed currentColor;
-  }
-  &-leftline,
-  &-rightline {
-    transform-origin: 0 0;
-    transform: rotate(90deg);
-  }
+  pointer-events: none;
+  outline: 1px dashed currentColor;
+  outline-offset: -1px;
 }
 .dnd-overlay-activemask {
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 0;
-  height: 0;
   color: #3396fb;
-  &-line {
-    position: absolute;
-    border-top: 2px solid currentColor;
-  }
-  &-leftline,
-  &-rightline {
-    transform-origin: 0 0;
-    transform: rotate(90deg);
-  }
+  pointer-events: none;
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
   &-buttons {
     position: absolute;
     width: 80px;
