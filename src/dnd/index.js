@@ -156,7 +156,7 @@ class Dnd {
   }
   activeHandle (elem, resize = false) {
     let activeId = getElementId(this.currActiveElem)
-    if ((elem && this.currActiveElem !== elem) || resize) {
+    if (elem && (this.currActiveElem !== elem || resize || this.overlayActivemask.status === 1)) {
       this.currActiveElem = elem
       let currElemDetail = getElementDetail(this.currActiveElem)
       let currElemOffset = getElementContainerOffset(
@@ -190,6 +190,7 @@ class Dnd {
       event.dataTransfer.setDragImage(this.overlayDragcanvas.elem, 30, 20)
       Utils.removeClass(this.currDragElem, 's-mouseover')
       this.overlayHovermask.hide()
+      this.overlayActivemask.hide()
       typeof this.onDragstart === 'function' && this.onDragstart(event)
     })
   }
@@ -198,6 +199,9 @@ class Dnd {
       throttle(() => {
         this.currDragElem = null
         this.overlayPlaceholder.hide()
+        if (this.currActiveElem) {
+          this.activeHandle(this.currActiveElem)
+        }
         typeof this.onDragend === 'function' && this.onDragend(event)
       }, true)
     })
@@ -237,7 +241,7 @@ class Dnd {
                 mode: 'vertical',
                 length: currElemDetail.height,
                 top: baseTop + currElemDetail.y,
-                left: baseLeft + currElemDetail.x + currElemDetail.width
+                left: baseLeft + currElemDetail.x + currElemDetail.width - this.overlayPlaceholder.borderWidth
               })
               break
             case 'top':
@@ -250,7 +254,7 @@ class Dnd {
             case 'bottom':
               this.overlayPlaceholder.show({
                 length: currElemDetail.width,
-                top: baseTop + currElemDetail.y + currElemDetail.height,
+                top: baseTop + currElemDetail.y + currElemDetail.height - this.overlayPlaceholder.borderWidth,
                 left: baseLeft + currElemDetail.x
               })
               break

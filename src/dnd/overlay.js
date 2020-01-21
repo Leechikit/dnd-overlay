@@ -94,6 +94,7 @@ let activemask = {
   rightLineEl: null,
   buttonGroupEl: null,
   borderWidth: 2,
+  status: 1, // 0-显示 1-隐藏
   createElement (
     {
       className = 'dnd-overlay-activemask',
@@ -126,7 +127,7 @@ let activemask = {
     this.parentId = parentId
     this.buttonGroupEl.style.left = combinePx(width - 80)
     if (top > 30) {
-      this.buttonGroupEl.style.top = combinePx(- 30)
+      this.buttonGroupEl.style.top = combinePx(-30)
     } else {
       this.buttonGroupEl.style.top = combinePx(height)
     }
@@ -134,9 +135,11 @@ let activemask = {
     this.elem.style.height = heightPx
     this.elem.style.transform = `translate(${leftPx},${topPx})`
     this.elem.style.display = 'block'
+    this.status = 0
   },
   hide () {
     this.elem.style.display = 'none'
+    this.status = 1
   },
   bindEvent () {
     let deleteButtonEl = this.containerEl.querySelector(

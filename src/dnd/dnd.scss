@@ -25,12 +25,16 @@
       }
     }
   }
+  .fd-dnd-drag {
+    .el-input,.el-select {
+      pointer-events: none;
+    }
+  }
 }
 .fd-dnd-overlay {
   position: absolute;
   left: 0;
   top: 0;
-  z-index: 3;
   width: 0;
   height: 0;
 }
@@ -106,6 +110,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    pointer-events: auto;
     span {
       display: inline-block;
       width: 30px;
