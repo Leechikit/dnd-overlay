@@ -11,6 +11,7 @@ class Dnd {
       dragSelector = '.dnd-drag',
       dropSelector = '.dnd-droparea',
       dropContainerSelector,
+      onDragbefore = function () {},
       onDragstart = function () {},
       onDragend = function () {},
       onDragover = function () {},
@@ -24,6 +25,7 @@ class Dnd {
     this.dragSelector = dragSelector
     this.dropSelector = dropSelector
     this.dropContainerSelector = dropContainerSelector
+    this.onDragbefore = onDragbefore
     this.onDragstart = onDragstart
     this.onDragend = onDragend
     this.onDragover = onDragover
@@ -38,6 +40,7 @@ class Dnd {
     this.currActiveElem = null
     this.overlayPlaceholder = null
     this.overlayHovermask = null
+    this.overlayFuzzylayer = null
     this.init()
     return this
   }
@@ -74,6 +77,7 @@ class Dnd {
     this.overlayHovermask = overlay.hovermask
     this.overlayActivemask = overlay.activemask
     this.overlayDragcanvas = overlay.dragcanvas
+    this.overlayFuzzylayer = overlay.fuzzylayer
     let overlayPlaceholderEl = this.overlayPlaceholder.elem
     if (this.dropContainerSelector !== void 0) {
       let containerEl = document.querySelector(this.dropContainerSelector)
@@ -186,8 +190,33 @@ class Dnd {
     this.bindEvent(this.dragSelector, 'dragstart', event => {
       event.stopPropagation()
       this.currDragElem = event.currentTarget
-      this.overlayDragcanvas.change(this.currDragElem.innerText)
-      event.dataTransfer.setDragImage(this.overlayDragcanvas.elem, 30, 20)
+      let dragId = getElementId(this.currDragElem)
+      let type = 'change'
+      let index = null
+      if (dragId === null) {
+        type = 'add'
+        index = this.currDragElem.getAttribute('data-key')
+      }
+      if (type === 'change') {
+        let currElemDetail = getElementDetail(this.currDragElem)
+        let currElemOffset = getElementContainerOffset(
+          this.currDragElem,
+          this.dropContainerSelector
+        )
+        this.overlayFuzzylayer.show({
+          elem: this.currDragElem,
+          left: currElemOffset.offsetLeft,
+          top: currElemOffset.offsetTop,
+          width: currElemDetail.width,
+          height: currElemDetail.height
+        })
+      }
+      if (typeof this.onDragbefore === 'function') {
+        this.onDragbefore({ type, dragId, index }, name => {
+          this.overlayDragcanvas.change(name || '拖拽中组件')
+          event.dataTransfer.setDragImage(this.overlayDragcanvas.elem, 30, 20)
+        })
+      }
       Utils.removeClass(this.currDragElem, 's-mouseover')
       this.overlayHovermask.hide()
       this.overlayActivemask.hide()
@@ -199,6 +228,7 @@ class Dnd {
       throttle(() => {
         this.currDragElem = null
         this.overlayPlaceholder.hide()
+        this.overlayFuzzylayer.hide()
         if (this.currActiveElem) {
           this.activeHandle(this.currActiveElem)
         }

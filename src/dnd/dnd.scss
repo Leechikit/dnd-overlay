@@ -40,6 +40,8 @@
 }
 .dnd-overlay-placeholder {
   position: absolute;
+  left: 0;
+  top: 0;
   z-index: 2;
   color: orange;
   background-color: currentColor;
@@ -88,6 +90,8 @@
 }
 .dnd-overlay-hovermask {
   position: absolute;
+  left: 0;
+  top: 0;
   color: #3396fb;
   pointer-events: none;
   outline: 1px dashed currentColor;
@@ -95,6 +99,8 @@
 }
 .dnd-overlay-activemask {
   position: absolute;
+  left: 0;
+  top: 0;
   color: #3396fb;
   pointer-events: none;
   outline: 2px solid currentColor;
@@ -123,4 +129,12 @@
       }
     }
   }
+}
+.dnd-overlay-fuzzylayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  filter: blur(2px);
+  background-color: rgba(#fff, 0.5);
 }

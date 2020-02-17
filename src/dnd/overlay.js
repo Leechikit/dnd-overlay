@@ -5,6 +5,7 @@
  * @update:
  */
 import Utils from '@/helper/utils'
+import html2canvas from 'html2canvas'
 
 /**
  * 占位遮罩层
@@ -196,6 +197,48 @@ let dragcanvas = {
 }
 
 /**
+* 模糊层
+*
+*/
+let fuzzylayer = {
+  elem: null,
+  topLineEl: null,
+  bottomLineEl: null,
+  leftLineEl: null,
+  rightLineEl: null,
+  borderWidth: 1,
+  createElement (
+    { className = 'dnd-overlay-fuzzylayer', containerEl } = {
+      className: 'dnd-overlay-fuzzylayer'
+    }
+  ) {
+    this.elem = document.createElement('div')
+    this.elem.className = className
+    this.elem.style.display = 'none'
+    containerEl.appendChild(this.elem)
+  },
+  async show ({ elem, top, left, width, height }) {
+    let topPx = combinePx(top)
+    let leftPx = combinePx(left)
+    let widthPx = combinePx(width)
+    let heightPx = combinePx(height)
+    this.elem.innerHTML = ''
+    this.elem.appendChild(elem.cloneNode(true))
+    this.elem.style.width = widthPx
+    this.elem.style.height = heightPx
+    this.elem.style.transform = `translate(${leftPx},${topPx})`
+    this.elem.style.display = 'block'
+  },
+  async getDragElemImage (elem) {
+    let canvas = await html2canvas(elem)
+    return canvas.toDataURL()
+  },
+  hide () {
+    this.elem.style.display = 'none'
+  }
+}
+
+/**
  * 拼接px
  *
  * @param: {Number} number 值
@@ -230,11 +273,13 @@ function init ({
   hovermask.createElement({ containerEl })
   activemask.createElement({ containerEl, onDelete, onCopy })
   dragcanvas.createElement({ containerEl })
+  fuzzylayer.createElement({ containerEl })
   return {
     placeholder,
     hovermask,
     activemask,
-    dragcanvas
+    dragcanvas,
+    fuzzylayer
   }
 }
 
